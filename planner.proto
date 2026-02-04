@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package planner_service;
+
+// ============================================================================
+// Message Definitions
+// ============================================================================
+
+// Request to update point cloud data
+message UpdatePointCloudRequest {
+    // Point cloud data as flat array: [x1, y1, z1, x2, y2, z2, ...]
+    repeated double points = 1;
+    int32 num_points = 2;
+}
+
+message UpdatePointCloudResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// Request to convert surface to mesh
+message ConvertToMeshRequest {
+    double resolution = 1;  // Sampling resolution, default 64
+}
+
+message Triangle {
+    // 9 values: [x1, y1, z1, x2, y2, z2, x3, y3, z3]
+    repeated double vertices = 1;
+}
+
+message ConvertToMeshResponse {
+    bool success = 1;
+    string message = 2;
+    repeated Triangle triangles = 3;
+    int32 num_triangles = 4;
+}
+
+// Request to find closest point on surface
+message GetClosestPointRequest {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+
+message GetClosestPointResponse {
+    bool success = 1;
+    string message = 2;
+    double closest_x = 3;
+    double closest_y = 4;
+    double closest_z = 5;
+    double u = 6;  // UV parameter
+    double v = 7;
+}
+
+// Request to plan trajectory
+message PlanTrajectoryRequest {
+    double start_u = 1;
+    double start_v = 2;
+    double goal_u = 3;
+    double goal_v = 4;
+    int32 num_samples = 5;  // Number of samples for planner, default 5000
+    double planning_timeout = 6;  // Planning timeout in seconds, default 20.0
+}
+
+message TrajectoryPoint {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double psi = 4;    // Yaw angle
+    double theta = 5;  // Pitch angle
+    double nx = 6;     // Normal vector x
+    double ny = 7;     // Normal vector y
+    double nz = 8;     // Normal vector z
+}
+
+message PlanTrajectoryResponse {
+    bool success = 1;
+    string message = 2;
+    repeated TrajectoryPoint trajectory = 3;
+    double planning_time = 4;
+    int32 num_trajectory_points = 5;
+}
+
+// ============================================================================
+// Service Definition
+// ============================================================================
+
+service PlannerService {
+    // Interface 1: Update point cloud data
+    rpc UpdatePointCloud(UpdatePointCloudRequest) returns (UpdatePointCloudResponse);
+
+    // Interface 2: Convert fitted surface to mesh triangles
+    rpc ConvertToMesh(ConvertToMeshRequest) returns (ConvertToMeshResponse);
+
+    // Interface 3: Get closest point on surface
+    rpc GetClosestPoint(GetClosestPointRequest) returns (GetClosestPointResponse);
+
+    // Interface 4: Plan trajectory on surface
+    rpc PlanTrajectory(PlanTrajectoryRequest) returns (PlanTrajectoryResponse);
+}

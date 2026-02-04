@@ -1,0 +1,33 @@
+# Build directories
+build/
+cmake-build-*/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Generated protobuf files (optional - can be committed if needed)
+*_pb2.py
+*_pb2_grpc.py
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
