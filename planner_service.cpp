@@ -278,67 +278,46 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
 
         std::cout << "Planning succeeded in " << planning_time << " seconds" << std::endl;
 
-        // Get solution path
+        // Get solution path (in UV space)
         ob::PathPtr path = pdef->getSolutionPath();
-        auto statePath = std::make_shared<og::PathGeometric>(stateSi);
 
-        // Convert UV path to state space path
-        ob::State* s = stateSi->allocState();
-        for (auto point : path->as<og::PathGeometric>()->getStates()) {
-            auto u = point->as<ob::RealVectorStateSpace::StateType>()->values[0];
-            auto v = point->as<ob::RealVectorStateSpace::StateType>()->values[1];
+        // Smooth the UV path
+        og::PathSimplifier psUV(si);
+        psUV.smoothBSpline(*path->as<og::PathGeometric>(), 3, 0.005);
+
+        // Extract trajectory with all information in one loop
+        auto uvStates = path->as<og::PathGeometric>()->getStates();
+        trajectory.reserve(uvStates.size());
+
+        for (auto uvState : uvStates) {
+            auto u = uvState->as<ob::RealVectorStateSpace::StateType>()->values[0];
+            auto v = uvState->as<ob::RealVectorStateSpace::StateType>()->values[1];
+
+            // Get UAV state (position and orientation)
             auto q = ik_->xToQ(u, v);
 
-            auto stateS = s->as<ob::RealVectorStateSpace::StateType>();
-            stateS->values[0] = q(0);
-            stateS->values[1] = q(1);
-            stateS->values[2] = q(2);
-            stateS->values[3] = q(3);
-            stateS->values[4] = q(4);
+            // Get surface base point and normal
+            auto q_s = ik_->xToQs(u, v);
 
-            statePath->as<og::PathGeometric>()->append(s->as<ob::State>());
-        }
-
-        // Smooth path
-        og::PathSimplifier ps(stateSi);
-        ps.smoothBSpline(*statePath->as<og::PathGeometric>(), 3, 0.0005);
-
-        // Extract trajectory with normals
-        auto states = statePath->as<og::PathGeometric>()->getStates();
-        trajectory.reserve(states.size());
-
-        for (auto state : states) {
-            const auto statePt = state->as<ob::RealVectorStateSpace::StateType>();
-            
             TrajectoryPoint tp;
-            tp.x = statePt->values[0];
-            tp.y = statePt->values[1];
-            tp.z = statePt->values[2];
-            tp.psi = statePt->values[3];
-            tp.theta = statePt->values[4];
+            // UAV position and orientation from q
+            tp.x = q(0);
+            tp.y = q(1);
+            tp.z = q(2);
+            tp.psi = q(3);
+            tp.theta = q(4);
 
-            // Get normal at this position
-            Eigen::Vector3d pos(tp.x, tp.y, tp.z);
-            double u_closest, v_closest;
-            if (nurbs_->getClosestPoint(pos, u_closest, v_closest) == 0) {
-                Eigen::Vector3d normal;
-                if (nurbs_->getNormal(u_closest, v_closest, normal) == 0) {
-                    tp.nx = normal.x();
-                    tp.ny = normal.y();
-                    tp.nz = normal.z();
-                } else {
-                    tp.nx = tp.ny = 0.0;
-                    tp.nz = 1.0;
-                }
-            } else {
-                tp.nx = tp.ny = 0.0;
-                tp.nz = 1.0;
-            }
+            // Surface base point and normal from q_s
+            // q_s contains: [sx, sy, sz, nx, ny, nz, x, y, z, psi, theta]
+            tp.sx = q_s(0);
+            tp.sy = q_s(1);
+            tp.sz = q_s(2);
+            tp.nx = q_s(3);
+            tp.ny = q_s(4);
+            tp.nz = q_s(5);
 
             trajectory.push_back(tp);
         }
-
-        stateSi->freeState(s);
 
         std::cout << "Trajectory generated with " << trajectory.size() << " points" << std::endl;
         return true;

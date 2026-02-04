@@ -83,9 +83,10 @@ public:
      * @return true if successful
      */
     struct TrajectoryPoint {
-        double x, y, z;           // Position
-        double psi, theta;        // Orientation (yaw, pitch)
-        double nx, ny, nz;        // Normal vector
+        double x, y, z;           // UAV position
+        double psi, theta;        // UAV orientation (yaw, pitch)
+        double sx, sy, sz;        // Surface base point
+        double nx, ny, nz;        // Surface normal vector
     };
 
     bool planTrajectory(double start_u, double start_v,

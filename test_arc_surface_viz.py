@@ -7,7 +7,7 @@ import grpc
 import numpy as np
 import sys
 import matplotlib
-matplotlib.use('Agg')  # 使用非交互式后端，不显示窗口
+# matplotlib.use('Agg')  # 使用非交互式后端，不显示窗口
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -102,27 +102,48 @@ def visualize_mesh(triangles, trajectory=None, title="网格和轨迹可视化")
     if trajectory and len(trajectory) > 0:
         print(f"绘制轨迹: {len(trajectory)} 个点")
 
-        # 提取轨迹坐标
+        # 提取UAV轨迹坐标
         traj_x = [p.x for p in trajectory]
         traj_y = [p.y for p in trajectory]
         traj_z = [p.z for p in trajectory]
 
-        # 绘制轨迹线
-        ax.plot(traj_x, traj_y, traj_z, 'r-', linewidth=3, label='轨迹')
+        # 提取曲面基础点坐标
+        surf_x = [p.sx for p in trajectory]
+        surf_y = [p.sy for p in trajectory]
+        surf_z = [p.sz for p in trajectory]
 
-        # 标记起点和终点
+        # 绘制UAV轨迹线
+        ax.plot(traj_x, traj_y, traj_z, 'r-', linewidth=3, label='UAV轨迹')
+
+        # 绘制曲面基础点轨迹线
+        ax.plot(surf_x, surf_y, surf_z, 'b-', linewidth=2, label='曲面轨迹', alpha=0.7)
+
+        # 标记UAV起点和终点
         ax.scatter([traj_x[0]], [traj_y[0]], [traj_z[0]],
-                  c='green', s=200, marker='o', label='起点', edgecolors='black', linewidths=2)
+                  c='green', s=200, marker='o', label='UAV起点', edgecolors='black', linewidths=2)
         ax.scatter([traj_x[-1]], [traj_y[-1]], [traj_z[-1]],
-                  c='red', s=200, marker='s', label='终点', edgecolors='black', linewidths=2)
+                  c='red', s=200, marker='s', label='UAV终点', edgecolors='black', linewidths=2)
+
+        # 标记曲面基础点起点和终点
+        ax.scatter([surf_x[0]], [surf_y[0]], [surf_z[0]],
+                  c='lightgreen', s=150, marker='o', label='曲面起点', edgecolors='black', linewidths=1.5)
+        ax.scatter([surf_x[-1]], [surf_y[-1]], [surf_z[-1]],
+                  c='lightcoral', s=150, marker='s', label='曲面终点', edgecolors='black', linewidths=1.5)
+
+        # 绘制UAV到曲面基础点的连接线（每隔几个点绘制一次）
+        step = max(1, len(trajectory) // 10)  # 最多显示10条连接线
+        for i in range(0, len(trajectory), step):
+            ax.plot([traj_x[i], surf_x[i]],
+                   [traj_y[i], surf_y[i]],
+                   [traj_z[i], surf_z[i]],
+                   'g--', linewidth=1, alpha=0.5)
 
         # 绘制法向量（每隔几个点绘制一次）
-        step = max(1, len(trajectory) // 10)  # 最多显示10个法向量
         for i in range(0, len(trajectory), step):
             p = trajectory[i]
-            # 法向量长度
+            # 法向量从曲面基础点出发
             scale = 0.2
-            ax.quiver(p.x, p.y, p.z,
+            ax.quiver(p.sx, p.sy, p.sz,
                      p.nx * scale, p.ny * scale, p.nz * scale,
                      color='orange', arrow_length_ratio=0.3, linewidth=1.5)
 
@@ -152,11 +173,12 @@ def visualize_mesh(triangles, trajectory=None, title="网格和轨迹可视化")
 
     # 保存图片
     output_file = 'grpc_planner_visualization.png'
-    plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    # plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    plt.show()
     print(f"\n可视化图片已保存: {output_file}")
 
     # 不显示窗口，直接关闭
-    plt.close()
+    # plt.close()
 
 
 def test_grpc_service(server_address='localhost:50051'):
@@ -304,8 +326,10 @@ def test_grpc_service(server_address='localhost:50051'):
             print(f"✅ 轨迹规划成功!")
             trajectory_points = response.trajectory
             print(f"\n轨迹详情:")
-            print(f"  起点: ({response.trajectory[0].x:.3f}, {response.trajectory[0].y:.3f}, {response.trajectory[0].z:.3f})")
-            print(f"  终点: ({response.trajectory[-1].x:.3f}, {response.trajectory[-1].y:.3f}, {response.trajectory[-1].z:.3f})")
+            print(f"  UAV起点: ({response.trajectory[0].x:.3f}, {response.trajectory[0].y:.3f}, {response.trajectory[0].z:.3f})")
+            print(f"  UAV终点: ({response.trajectory[-1].x:.3f}, {response.trajectory[-1].y:.3f}, {response.trajectory[-1].z:.3f})")
+            print(f"  曲面起点: ({response.trajectory[0].sx:.3f}, {response.trajectory[0].sy:.3f}, {response.trajectory[0].sz:.3f})")
+            print(f"  曲面终点: ({response.trajectory[-1].sx:.3f}, {response.trajectory[-1].sy:.3f}, {response.trajectory[-1].sz:.3f})")
             print(f"  法向量(起点): ({response.trajectory[0].nx:.3f}, {response.trajectory[0].ny:.3f}, {response.trajectory[0].nz:.3f})")
             print(f"  姿态(起点): psi={response.trajectory[0].psi:.3f}, theta={response.trajectory[0].theta:.3f}")
         else:

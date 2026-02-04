@@ -163,6 +163,9 @@ public:
                 point->set_z(tp.z);
                 point->set_psi(tp.psi);
                 point->set_theta(tp.theta);
+                point->set_sx(tp.sx);
+                point->set_sy(tp.sy);
+                point->set_sz(tp.sz);
                 point->set_nx(tp.nx);
                 point->set_ny(tp.ny);
                 point->set_nz(tp.nz);

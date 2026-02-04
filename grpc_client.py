@@ -156,7 +156,8 @@ class PlannerClient:
         Returns:
             bool: True if successful
             list: List of trajectory points, each point is a dict with keys:
-                  'position' (x,y,z), 'orientation' (psi,theta), 'normal' (nx,ny,nz)
+                  'position' (x,y,z), 'orientation' (psi,theta),
+                  'surface_point' (sx,sy,sz), 'normal' (nx,ny,nz)
             float: Planning time in seconds
             str: Response message
         """
@@ -189,6 +190,7 @@ class PlannerClient:
                     trajectory.append({
                         'position': (point.x, point.y, point.z),
                         'orientation': (point.psi, point.theta),
+                        'surface_point': (point.sx, point.sy, point.sz),
                         'normal': (point.nx, point.ny, point.nz)
                     })
 
