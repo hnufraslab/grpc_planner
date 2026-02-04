@@ -63,14 +63,17 @@ message PlanTrajectoryRequest {
 }
 
 message TrajectoryPoint {
-    double x = 1;
-    double y = 2;
-    double z = 3;
+    double x = 1;      // UAV position x
+    double y = 2;      // UAV position y
+    double z = 3;      // UAV position z
     double psi = 4;    // Yaw angle
     double theta = 5;  // Pitch angle
-    double nx = 6;     // Normal vector x
-    double ny = 7;     // Normal vector y
-    double nz = 8;     // Normal vector z
+    double sx = 6;     // Surface base point x
+    double sy = 7;     // Surface base point y
+    double sz = 8;     // Surface base point z
+    double nx = 9;     // Normal vector x
+    double ny = 10;    // Normal vector y
+    double nz = 11;    // Normal vector z
 }
 
 message PlanTrajectoryResponse {
