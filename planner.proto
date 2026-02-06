@@ -52,6 +52,23 @@ message GetClosestPointResponse {
     double v = 7;
 }
 
+// Request to get surface point at UV coordinates
+message GetSurfacePointRequest {
+    double u = 1;  // U parameter (0-1)
+    double v = 2;  // V parameter (0-1)
+}
+
+message GetSurfacePointResponse {
+    bool success = 1;
+    string message = 2;
+    double x = 3;   // Surface point x coordinate
+    double y = 4;   // Surface point y coordinate
+    double z = 5;   // Surface point z coordinate
+    double nx = 6;  // Normal vector x component
+    double ny = 7;  // Normal vector y component
+    double nz = 8;  // Normal vector z component
+}
+
 // Request to plan trajectory
 message PlanTrajectoryRequest {
     double start_u = 1;
@@ -100,4 +117,7 @@ service PlannerService {
 
     // Interface 4: Plan trajectory on surface
     rpc PlanTrajectory(PlanTrajectoryRequest) returns (PlanTrajectoryResponse);
+
+    // Interface 5: Get surface point and normal at UV coordinates
+    rpc GetSurfacePoint(GetSurfacePointRequest) returns (GetSurfacePointResponse);
 }

@@ -2,11 +2,12 @@
 """
 Python Client for gRPC Planner Service
 
-This client demonstrates how to call the 4 interfaces provided by the planner service:
+This client demonstrates how to call the 5 interfaces provided by the planner service:
 1. UpdatePointCloud - Update point cloud data
 2. ConvertToMesh - Convert fitted surface to mesh triangles
 3. GetClosestPoint - Get closest point on surface
 4. PlanTrajectory - Plan trajectory on surface
+5. GetSurfacePoint - Get surface point and normal at UV coordinates
 
 Usage:
     python grpc_client.py
@@ -202,6 +203,43 @@ class PlannerClient:
             print(f"RPC failed: {e}")
             return False, [], 0.0, str(e)
 
+    def get_surface_point(self, u, v):
+        """
+        Interface 5: Get surface point and normal at UV coordinates
+
+        Args:
+            u, v: UV parameters (0-1)
+
+        Returns:
+            bool: True if successful
+            dict: Dictionary containing 'position' (x,y,z) and 'normal' (nx,ny,nz)
+            str: Response message
+        """
+        print("\n=== Calling GetSurfacePoint ===")
+        print(f"UV parameters: ({u}, {v})")
+
+        request = planner_pb2.GetSurfacePointRequest(u=u, v=v)
+
+        try:
+            response = self.stub.GetSurfacePoint(request)
+            print(f"Success: {response.success}")
+            print(f"Message: {response.message}")
+
+            if response.success:
+                result = {
+                    'position': (response.x, response.y, response.z),
+                    'normal': (response.nx, response.ny, response.nz)
+                }
+                print(f"Surface point: {result['position']}")
+                print(f"Normal vector: {result['normal']}")
+                return response.success, result, response.message
+            else:
+                return response.success, {}, response.message
+
+        except grpc.RpcError as e:
+            print(f"RPC failed: {e}")
+            return False, {}, str(e)
+
 
 def main():
     """Example usage of the PlannerClient"""
@@ -265,6 +303,15 @@ def main():
                 print(f"  End position: {trajectory[-1]['position']}")
                 print(f"  End orientation: {trajectory[-1]['orientation']}")
                 print(f"  End normal: {trajectory[-1]['normal']}")
+
+        # Example 5: Get surface point at UV coordinates
+        print("\n" + "="*60)
+        print("Example 5: Get Surface Point")
+        print("="*60)
+
+        success, result, message = client.get_surface_point(0.5, 0.5)
+        if success:
+            print(f"Result: {result}")
 
     finally:
         client.close()

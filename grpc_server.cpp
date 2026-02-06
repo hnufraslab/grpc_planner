@@ -18,6 +18,8 @@ using planner_service::ConvertToMeshRequest;
 using planner_service::ConvertToMeshResponse;
 using planner_service::GetClosestPointRequest;
 using planner_service::GetClosestPointResponse;
+using planner_service::GetSurfacePointRequest;
+using planner_service::GetSurfacePointResponse;
 using planner_service::PlanTrajectoryRequest;
 using planner_service::PlanTrajectoryResponse;
 
@@ -180,6 +182,40 @@ public:
         } else {
             response->set_message("Failed to plan trajectory: " + planner_.getLastError());
             std::cerr << "Failed to plan trajectory: " << planner_.getLastError() << std::endl;
+        }
+
+        return Status::OK;
+    }
+
+    // Interface 5: Get Surface Point
+    Status GetSurfacePoint(ServerContext* context,
+                          const GetSurfacePointRequest* request,
+                          GetSurfacePointResponse* response) override {
+        std::cout << "\n=== GetSurfacePoint called ===" << std::endl;
+        std::cout << "UV parameters: (" << request->u() << ", " << request->v() << ")" << std::endl;
+
+        double x, y, z, nx, ny, nz;
+
+        bool success = planner_.getSurfacePoint(
+            request->u(), request->v(),
+            x, y, z, nx, ny, nz
+        );
+
+        response->set_success(success);
+        if (success) {
+            response->set_x(x);
+            response->set_y(y);
+            response->set_z(z);
+            response->set_nx(nx);
+            response->set_ny(ny);
+            response->set_nz(nz);
+            response->set_message("Surface point retrieved successfully");
+
+            std::cout << "Surface point: (" << x << ", " << y << ", " << z << ")" << std::endl;
+            std::cout << "Normal vector: (" << nx << ", " << ny << ", " << nz << ")" << std::endl;
+        } else {
+            response->set_message("Failed to get surface point: " + planner_.getLastError());
+            std::cerr << "Failed to get surface point: " << planner_.getLastError() << std::endl;
         }
 
         return Status::OK;

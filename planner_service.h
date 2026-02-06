@@ -97,6 +97,22 @@ public:
                        double timeout = 20.0);
 
     /**
+     * @brief Interface 5: Get surface point and normal at UV coordinates
+     * @param u UV parameter u (0-1)
+     * @param v UV parameter v (0-1)
+     * @param x Output surface point x coordinate
+     * @param y Output surface point y coordinate
+     * @param z Output surface point z coordinate
+     * @param nx Output normal vector x component
+     * @param ny Output normal vector y component
+     * @param nz Output normal vector z component
+     * @return true if successful
+     */
+    bool getSurfacePoint(double u, double v,
+                        double& x, double& y, double& z,
+                        double& nx, double& ny, double& nz);
+
+    /**
      * @brief Check if surface has been fitted
      */
     bool isSurfaceFitted() const;

@@ -181,6 +181,58 @@ bool PlannerService::getClosestPoint(double x, double y, double z,
 // Interface 4: Plan Trajectory
 // ============================================================================
 
+bool PlannerService::getSurfacePoint(double u, double v,
+                                     double& x, double& y, double& z,
+                                     double& nx, double& ny, double& nz) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    try {
+        if (!surface_fitted_) {
+            last_error_ = "Surface not fitted yet";
+            return false;
+        }
+
+        // Validate UV parameters
+        if (u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0) {
+            last_error_ = "UV parameters must be in range [0, 1]";
+            return false;
+        }
+
+        // Get position at UV
+        Eigen::Vector3d position;
+        if (nurbs_->getPos(u, v, position) != 0) {
+            last_error_ = "Failed to get position at UV";
+            return false;
+        }
+
+        // Get normal at UV
+        Eigen::Vector3d normal;
+        if (nurbs_->getNormal(u, v, normal) != 0) {
+            last_error_ = "Failed to get normal at UV";
+            return false;
+        }
+
+        // Set output values
+        x = position.x();
+        y = position.y();
+        z = position.z();
+        nx = normal.x();
+        ny = normal.y();
+        nz = normal.z();
+
+        return true;
+
+    } catch (const std::exception& e) {
+        last_error_ = std::string("Exception in getSurfacePoint: ") + e.what();
+        std::cerr << last_error_ << std::endl;
+        return false;
+    }
+}
+
+// ============================================================================
+// Interface 5: Plan Trajectory
+// ============================================================================
+
 bool PlannerService::planTrajectory(double start_u, double start_v,
                                     double goal_u, double goal_v,
                                     std::vector<TrajectoryPoint>& trajectory,
