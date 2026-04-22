@@ -61,7 +61,7 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
         }
 
         // Fit the surface
-        if (nurbs_->fitSurface() != 0) {
+        if (nurbs_->fitSurfaceByCorners() != 0) {
             last_error_ = "Failed to fit surface";
             surface_fitted_ = false;
             return false;
@@ -307,10 +307,17 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
         pdef->setStartAndGoalStates(start, goal);
         pdef->setOptimizationObjective(opt);
 
-        // Create PCS-FMT planner
-        auto planner = std::make_shared<og::PCSFMT>(si, stateSi, ik_.get());
+        // // Create PCS-FMT planner
+        // auto planner = std::make_shared<og::PCSFMT>(si, stateSi, ik_.get());
+        // planner->setNumSamples(num_samples);
+        // planner->setWeights(weights_);
+        // planner->setProblemDefinition(pdef);
+        // planner->setup();
+
+        // Create FMT planner
+        auto planner = std::make_shared<og::FMT>(si, stateSi, ik_.get());
         planner->setNumSamples(num_samples);
-        planner->setWeights(weights_);
+        // planner->setWeights(weights_);
         planner->setProblemDefinition(pdef);
         planner->setup();
 

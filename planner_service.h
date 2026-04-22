@@ -3,7 +3,8 @@
 
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
-#include <ompl/geometric/planners/fmt/PCSFMT.h>
+// #include <ompl/geometric/planners/fmt/PCSFMT.h>
+#include <ompl/geometric/planners/fmt/FMT.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/objectives/EstimatePathLengthOptimizationObjective.h>
 #include <ompl/base/AdaptiveDiscreteMotionValidator.h>
