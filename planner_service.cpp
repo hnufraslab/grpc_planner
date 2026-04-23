@@ -315,7 +315,7 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
         // planner->setup();
 
         // Create FMT planner
-        auto planner = std::make_shared<og::FMT>(si, stateSi, ik_.get());
+        auto planner = std::make_shared<og::FMT>(si);
         planner->setNumSamples(num_samples);
         // planner->setWeights(weights_);
         planner->setProblemDefinition(pdef);
