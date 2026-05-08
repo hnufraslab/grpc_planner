@@ -50,16 +50,10 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
             cloud->points[i].z = points[i * 3 + 2];
         }
 
-        // Create or update NURBS surface
-        if (!nurbs_) {
-            // First time: create NURBS with point cloud
-            nurbs_ = std::make_unique<sr::Nurbs>(cloud);
-            std::cout << "NURBS surface created with " << num_points << " points" << std::endl;
-        } else {
-            // Update existing NURBS surface
-            nurbs_->updatePointCloud(cloud);
-            std::cout << "NURBS surface updated with " << num_points << " points" << std::endl;
-        }
+        // Recreate the NURBS surface for each point-cloud update so a full-cloud
+        // fit and a later cropped-cloud fit cannot share fitting state.
+        nurbs_ = std::make_unique<sr::Nurbs>(cloud);
+        std::cout << "NURBS surface recreated with " << num_points << " points" << std::endl;
 
         Eigen::Vector3d ref_normal = Eigen::Vector3d::UnitZ();
         if (!reverse_normal) {
@@ -76,13 +70,11 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
         surface_fitted_ = true;
         mesh_converted_ = false;  // Need to regenerate mesh
 
-        // Initialize or update inverse kinematics
-        if (!ik_) {
-            ik_ = std::make_unique<dp::InvKin>(nurbs_.get());
-            ik_->setLinkLength(link_length_);
-            ik_->setClipBound(clip_bound_);
-            std::cout << "Inverse kinematics initialized" << std::endl;
-        }
+        // Rebind inverse kinematics to the current NURBS instance.
+        ik_ = std::make_unique<dp::InvKin>(nurbs_.get());
+        ik_->setLinkLength(link_length_);
+        ik_->setClipBound(clip_bound_);
+        std::cout << "Inverse kinematics initialized" << std::endl;
 
         std::cout << "Surface fitted successfully with reference normal: ("
                   << ref_normal.x() << ", " << ref_normal.y() << ", "
