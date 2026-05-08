@@ -9,8 +9,8 @@
 // ============================================================================
 
 PlannerService::PlannerService()
-    : weights_({1.0, 1.0, 1.0, 3.0, 6.0})
-    , clip_bound_({0.1, 0.9, 0.1, 0.9})
+    : weights_({1.0, 1.0, 1.0, 0.01, 0.01})
+    , clip_bound_({0.0, 1.0, 0.0, 1.0})
     , link_length_(0.96)
     , surface_fitted_(false)
     , mesh_converted_(false)
@@ -307,17 +307,15 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
         pdef->setStartAndGoalStates(start, goal);
         pdef->setOptimizationObjective(opt);
 
-        // // Create PCS-FMT planner
+        // Create PCS-FMT planner
         // auto planner = std::make_shared<og::PCSFMT>(si, stateSi, ik_.get());
         // planner->setNumSamples(num_samples);
         // planner->setWeights(weights_);
         // planner->setProblemDefinition(pdef);
         // planner->setup();
 
-        // Create FMT planner
         auto planner = std::make_shared<og::FMT>(si);
         planner->setNumSamples(num_samples);
-        // planner->setWeights(weights_);
         planner->setProblemDefinition(pdef);
         planner->setup();
 
