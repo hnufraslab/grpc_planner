@@ -27,7 +27,8 @@ PlannerService::~PlannerService() {
 // Interface 1: Update Point Cloud
 // ============================================================================
 
-bool PlannerService::updatePointCloud(const std::vector<double>& points, int num_points) {
+bool PlannerService::updatePointCloud(const std::vector<double>& points, int num_points,
+                                      bool reverse_normal) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     try {
@@ -60,8 +61,13 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
             std::cout << "NURBS surface updated with " << num_points << " points" << std::endl;
         }
 
+        Eigen::Vector3d ref_normal = Eigen::Vector3d::UnitZ();
+        if (!reverse_normal) {
+            ref_normal = -ref_normal;
+        }
+
         // Fit the surface
-        if (nurbs_->fitSurfaceByCorners() != 0) {
+        if (nurbs_->fitSurfaceByCorners(ref_normal) != 0) {
             last_error_ = "Failed to fit surface";
             surface_fitted_ = false;
             return false;
@@ -78,7 +84,9 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
             std::cout << "Inverse kinematics initialized" << std::endl;
         }
 
-        std::cout << "Surface fitted successfully" << std::endl;
+        std::cout << "Surface fitted successfully with reference normal: ("
+                  << ref_normal.x() << ", " << ref_normal.y() << ", "
+                  << ref_normal.z() << ")" << std::endl;
         return true;
 
     } catch (const std::exception& e) {
