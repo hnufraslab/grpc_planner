@@ -46,7 +46,8 @@ public:
      * @return true if successful
      */
     bool updatePointCloud(const std::vector<double>& points, int num_points,
-                          bool reverse_normal = false);
+                          bool reverse_normal = false,
+                          int reference_normal_axis = 0);
 
     /**
      * @brief Interface 2: Convert fitted surface to mesh triangles

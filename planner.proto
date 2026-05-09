@@ -11,7 +11,8 @@ message UpdatePointCloudRequest {
     // Point cloud data as flat array: [x1, y1, z1, x2, y2, z2, ...]
     repeated double points = 1;
     int32 num_points = 2;
-    bool reverse_normal = 3;  // Flip the fitting reference normal from -Z to +Z
+    bool reverse_normal = 3;  // Flip the fitting reference normal along the selected axis
+    int32 reference_normal_axis = 4;  // 0=X, 1=Y, 2=Z. Default is X.
 }
 
 message UpdatePointCloudResponse {

@@ -28,7 +28,8 @@ PlannerService::~PlannerService() {
 // ============================================================================
 
 bool PlannerService::updatePointCloud(const std::vector<double>& points, int num_points,
-                                      bool reverse_normal) {
+                                      bool reverse_normal,
+                                      int reference_normal_axis) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     try {
@@ -55,7 +56,20 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
         nurbs_ = std::make_unique<sr::Nurbs>(cloud);
         std::cout << "NURBS surface recreated with " << num_points << " points" << std::endl;
 
-        Eigen::Vector3d ref_normal = Eigen::Vector3d::UnitZ();
+        Eigen::Vector3d ref_normal = Eigen::Vector3d::UnitX();
+        switch (reference_normal_axis) {
+            case 1:
+                ref_normal = Eigen::Vector3d::UnitY();
+                break;
+            case 2:
+                ref_normal = Eigen::Vector3d::UnitZ();
+                break;
+            case 0:
+            default:
+                ref_normal = Eigen::Vector3d::UnitX();
+                break;
+        }
+
         if (!reverse_normal) {
             ref_normal = -ref_normal;
         }

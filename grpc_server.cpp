@@ -47,11 +47,13 @@ public:
         std::cout << "\n=== UpdatePointCloud called ===" << std::endl;
         std::cout << "Received " << request->num_points() << " points" << std::endl;
         std::cout << "Reverse normal: " << (request->reverse_normal() ? "true" : "false") << std::endl;
+        std::cout << "Reference normal axis: " << request->reference_normal_axis() << std::endl;
 
         std::vector<double> points(request->points().begin(), request->points().end());
 
         bool success = planner_.updatePointCloud(points, request->num_points(),
-                                                 request->reverse_normal());
+                                                 request->reverse_normal(),
+                                                 request->reference_normal_axis());
 
         response->set_success(success);
         if (success) {
