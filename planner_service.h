@@ -94,6 +94,9 @@ public:
         double nx, ny, nz;        // Surface normal vector
     };
 
+    bool planPointContact(double u, double v, double link_length,
+                          TrajectoryPoint& point, std::string& error);
+
     bool planTrajectory(double start_u, double start_v,
                        double goal_u, double goal_v,
                        std::vector<TrajectoryPoint>& trajectory,

@@ -20,6 +20,7 @@ using planner_service::GetClosestPointRequest;
 using planner_service::GetClosestPointResponse;
 using planner_service::GetSurfacePointRequest;
 using planner_service::GetSurfacePointResponse;
+using planner_service::PlanPointContactRequest;
 using planner_service::PlanTrajectoryRequest;
 using planner_service::PlanTrajectoryResponse;
 
@@ -166,18 +167,7 @@ public:
             response->set_link_length(length);
 
             for (const auto& tp : trajectory) {
-                auto* point = response->add_trajectory();
-                point->set_x(tp.x);
-                point->set_y(tp.y);
-                point->set_z(tp.z);
-                point->set_psi(tp.psi);
-                point->set_theta(tp.theta);
-                point->set_sx(tp.sx);
-                point->set_sy(tp.sy);
-                point->set_sz(tp.sz);
-                point->set_nx(tp.nx);
-                point->set_ny(tp.ny);
-                point->set_nz(tp.nz);
+                appendPoint(tp, response);
             }
 
             response->set_message("Trajectory planned successfully with " +
@@ -191,6 +181,24 @@ public:
             std::cerr << "Failed to plan trajectory: " << planner_.getLastError() << std::endl;
         }
 
+        return Status::OK;
+    }
+
+    Status PlanPointContact(ServerContext*, const PlanPointContactRequest* request,
+                            PlanTrajectoryResponse* response) override {
+        ::PlannerService::TrajectoryPoint point;
+        std::string error;
+        const bool success = planner_.planPointContact(
+            request->u(), request->v(), request->link_length(), point, error);
+        response->set_success(success);
+        if (success) {
+            appendPoint(point, response);
+            response->set_num_trajectory_points(1);
+            response->set_link_length(request->link_length());
+            response->set_message("Point contact pose computed");
+        } else {
+            response->set_message(error);
+        }
         return Status::OK;
     }
 
@@ -229,6 +237,22 @@ public:
     }
 
 private:
+    static void appendPoint(const ::PlannerService::TrajectoryPoint& tp,
+                            PlanTrajectoryResponse* response) {
+        auto* point = response->add_trajectory();
+        point->set_x(tp.x);
+        point->set_y(tp.y);
+        point->set_z(tp.z);
+        point->set_psi(tp.psi);
+        point->set_theta(tp.theta);
+        point->set_sx(tp.sx);
+        point->set_sy(tp.sy);
+        point->set_sz(tp.sz);
+        point->set_nx(tp.nx);
+        point->set_ny(tp.ny);
+        point->set_nz(tp.nz);
+    }
+
     ::PlannerService planner_;
 };
 

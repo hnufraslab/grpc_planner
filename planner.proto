@@ -85,6 +85,12 @@ message PlanTrajectoryRequest {
     }
 }
 
+message PlanPointContactRequest {
+    double u = 1;
+    double v = 2;
+    double link_length = 3;  // Metres, inclusive range [0.75, 1.5]
+}
+
 message TrajectoryPoint {
     double x = 1;      // UAV position x
     double y = 2;      // UAV position y
@@ -124,6 +130,9 @@ service PlannerService {
 
     // Interface 4: Plan trajectory on surface
     rpc PlanTrajectory(PlanTrajectoryRequest) returns (PlanTrajectoryResponse);
+
+    // Compute one fixed contact pose using the same inverse kinematics.
+    rpc PlanPointContact(PlanPointContactRequest) returns (PlanTrajectoryResponse);
 
     // Interface 5: Get surface point and normal at UV coordinates
     rpc GetSurfacePoint(GetSurfacePointRequest) returns (GetSurfacePointResponse);

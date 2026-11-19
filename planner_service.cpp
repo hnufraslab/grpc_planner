@@ -2,6 +2,7 @@
 #include <ompl/util/Time.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/PathSimplifier.h>
+#include <cmath>
 #include <iostream>
 
 // ============================================================================
@@ -247,6 +248,49 @@ bool PlannerService::getSurfacePoint(double u, double v,
 // ============================================================================
 // Interface 5: Plan Trajectory
 // ============================================================================
+
+bool PlannerService::planPointContact(double u, double v, double link_length,
+                                      TrajectoryPoint& point, std::string& error) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    try {
+        if (!device_geometry::validLinkLength(link_length)) {
+            error = "link_length must be finite and within [0.75, 1.5] metres";
+            return false;
+        }
+        if (!surface_fitted_ || !ik_) {
+            error = "Surface not fitted yet";
+            return false;
+        }
+        if (!std::isfinite(u) || !std::isfinite(v) || u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0) {
+            error = "UV parameters must be finite and within [0, 1]";
+            return false;
+        }
+
+        Eigen::Vector3d position, normal;
+        if (nurbs_->getPos(u, v, position) != 0 || nurbs_->getNormal(u, v, normal) != 0 ||
+            !position.allFinite() || !normal.allFinite() || normal.squaredNorm() <= 1e-12) {
+            error = "Could not evaluate a valid contact point and normal";
+            return false;
+        }
+
+        // Keep the sliding planner's cached link length and previous yaw intact.
+        auto point_ik = *ik_;
+        point_ik.setLinkLength(link_length);
+        dp::Vector6d surface;
+        surface << position, normal;
+        const auto pose = point_ik.qsToQ(surface);
+        if (!pose.allFinite()) {
+            error = "Contact inverse kinematics produced an invalid pose";
+            return false;
+        }
+        point = {pose(0), pose(1), pose(2), pose(3), pose(4),
+                 position.x(), position.y(), position.z(), normal.x(), normal.y(), normal.z()};
+        return true;
+    } catch (const std::exception& e) {
+        error = e.what();
+        return false;
+    }
+}
 
 bool PlannerService::planTrajectory(double start_u, double start_v,
                                     double goal_u, double goal_v,
