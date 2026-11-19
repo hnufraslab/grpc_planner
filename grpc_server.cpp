@@ -146,6 +146,8 @@ public:
 
         int num_samples = request->num_samples() > 0 ? request->num_samples() : 5000;
         double timeout = request->planning_timeout() > 0 ? request->planning_timeout() : 20.0;
+        const double length = request->device_geometry_case() == PlanTrajectoryRequest::kLinkLength
+            ? request->link_length() : device_geometry::kDefaultLinkLength;
 
         std::vector<::PlannerService::TrajectoryPoint> trajectory;
         double planning_time;
@@ -154,13 +156,14 @@ public:
             request->start_u(), request->start_v(),
             request->goal_u(), request->goal_v(),
             trajectory, planning_time,
-            num_samples, timeout
+            num_samples, timeout, length
         );
 
         response->set_success(success);
         if (success) {
             response->set_planning_time(planning_time);
             response->set_num_trajectory_points(trajectory.size());
+            response->set_link_length(length);
 
             for (const auto& tp : trajectory) {
                 auto* point = response->add_trajectory();

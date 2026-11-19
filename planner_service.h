@@ -10,11 +10,13 @@
 #include <ompl/base/AdaptiveDiscreteMotionValidator.h>
 #include "invkin.h"
 #include "nurbs.h"
+#include "link_length.h"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <array>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -97,7 +99,8 @@ public:
                        std::vector<TrajectoryPoint>& trajectory,
                        double& planning_time,
                        int num_samples = 5000,
-                       double timeout = 20.0);
+                       double timeout = 20.0,
+                       double link_length = device_geometry::kDefaultLinkLength);
 
     /**
      * @brief Interface 5: Get surface point and normal at UV coordinates
@@ -134,6 +137,9 @@ private:
     std::vector<double> weights_;
     std::vector<double> clip_bound_;
     double link_length_;
+    std::vector<TrajectoryPoint> cached_trajectory_;
+    std::array<double, 4> cached_endpoints_{};
+    double cached_link_length_ = device_geometry::kDefaultLinkLength;
 
     // State
     bool surface_fitted_;

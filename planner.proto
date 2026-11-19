@@ -79,6 +79,10 @@ message PlanTrajectoryRequest {
     double goal_v = 4;
     int32 num_samples = 5;  // Number of samples for planner, default 5000
     double planning_timeout = 6;  // Planning timeout in seconds, default 20.0
+    // Presence distinguishes an omitted setting from an explicitly invalid zero.
+    oneof device_geometry {
+        double link_length = 7;  // Metres, inclusive range [0.75, 1.5]
+    }
 }
 
 message TrajectoryPoint {
@@ -101,6 +105,7 @@ message PlanTrajectoryResponse {
     repeated TrajectoryPoint trajectory = 3;
     double planning_time = 4;
     int32 num_trajectory_points = 5;
+    double link_length = 6;  // Actual length used for this successful trajectory
 }
 
 // ============================================================================

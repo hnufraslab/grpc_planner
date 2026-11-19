@@ -11,7 +11,7 @@
 PlannerService::PlannerService()
     : weights_({1.0, 1.0, 1.0, 0.01, 0.01})
     , clip_bound_({0.0, 1.0, 0.0, 1.0})
-    , link_length_(0.96)
+    , link_length_(device_geometry::kDefaultLinkLength)
     , surface_fitted_(false)
     , mesh_converted_(false)
 {
@@ -54,6 +54,7 @@ bool PlannerService::updatePointCloud(const std::vector<double>& points, int num
         // Recreate the NURBS surface for each point-cloud update so a full-cloud
         // fit and a later cropped-cloud fit cannot share fitting state.
         nurbs_ = std::make_unique<sr::Nurbs>(cloud);
+        cached_trajectory_.clear();
         std::cout << "NURBS surface recreated with " << num_points << " points" << std::endl;
 
         Eigen::Vector3d ref_normal = Eigen::Vector3d::UnitX();
@@ -252,16 +253,42 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
                                     std::vector<TrajectoryPoint>& trajectory,
                                     double& planning_time,
                                     int num_samples,
-                                    double timeout) {
+                                    double timeout,
+                                    double link_length) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     try {
+        trajectory.clear();
+        planning_time = 0.0;
+        if (!device_geometry::validLinkLength(link_length)) {
+            last_error_ = "link_length must be finite and within [0.75, 1.5] metres";
+            return false;
+        }
         if (!surface_fitted_) {
             last_error_ = "Surface not fitted yet";
             return false;
         }
 
-        trajectory.clear();
+        // Apply every request to the existing IK instance before planning.
+        const bool length_changed = link_length != cached_link_length_;
+        link_length_ = link_length;
+        ik_->setLinkLength(link_length_);
+
+        const std::array<double, 4> endpoints{{start_u, start_v, goal_u, goal_v}};
+        if (length_changed && !cached_trajectory_.empty() && endpoints == cached_endpoints_) {
+            // A different device must keep the already selected contact path.
+            trajectory = cached_trajectory_;
+            for (auto& point : trajectory) {
+                point.x = point.sx + link_length_ * point.nx;
+                point.y = point.sy + link_length_ * point.ny;
+                point.z = point.sz + link_length_ * point.nz;
+            }
+            cached_trajectory_ = trajectory;
+            cached_link_length_ = link_length_;
+            last_error_.clear();
+            std::cout << "Reused contact path with link_length=" << link_length_ << std::endl;
+            return true;
+        }
 
         // Setup parameter space (UV space)
         uint paramDimensionsNum = 2;
@@ -391,6 +418,10 @@ bool PlannerService::planTrajectory(double start_u, double start_v,
         }
 
         std::cout << "Trajectory generated with " << trajectory.size() << " points" << std::endl;
+        cached_trajectory_ = trajectory;
+        cached_endpoints_ = endpoints;
+        cached_link_length_ = link_length_;
+        last_error_.clear();
         return true;
 
     } catch (const std::exception& e) {
